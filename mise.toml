@@ -1,0 +1,14 @@
+[tools]
+go = "1.25.6"
+
+[tasks."dev"]
+description = "Run pngbomb.go"
+run = "go run pngbomb.go"
+
+[tasks."build"]
+description = "Build a binary"
+quiet = true
+run = [
+  "go build pngbomb.go",
+  "echo ./pngbomb"
+]

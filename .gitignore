@@ -1,0 +1,5 @@
+# pngbomb outputs
+*.png
+
+# build outputs
+pngbomb
