@@ -14,7 +14,7 @@ This outputs a PNG at `image.png`.
 
 ## Developing
 
-## Setup
+### Setup
 
 Ensure you have git and [mise](https://mise.jdx.dev/) installed, then run:
 
@@ -27,7 +27,7 @@ cd pngbomb
 mise install
 ```
 
-## Run
+### Run
 
 Run `pngbomb.go`:
 
@@ -44,7 +44,7 @@ file image.png
 ls -lah image.png
 ```
 
-## Build
+### Build
 
 Build a standalone binary:
 
@@ -54,7 +54,7 @@ mise run build
 
 This outputs a binary at `./pngbomb`.
 
-## Test
+### Test
 
 Run the test suite:
 
