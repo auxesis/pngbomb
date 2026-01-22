@@ -317,14 +317,7 @@ func writePayload(width int, height int, w io.Writer) (err error) {
 	return
 }
 
-func main() {
-	width := 100000
-	height := 100000
-	w, err := os.Create("image.png")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(2)
-	}
+func generatePNG(width int, height int, w io.Writer) error {
 	e := &encoder{}
 	pal := color.Palette{}
 	e.m = image.NewPaletted(image.Rectangle{image.Point{0, 0}, image.Point{width, height}}, pal)
@@ -335,11 +328,27 @@ func main() {
 	io.WriteString(w, pngHeader)
 	e.writeIHDR()
 
-	err = writePayload(width, height, w)
+	err := writePayload(width, height, w)
+	if err != nil {
+		return fmt.Errorf("unable to write payload: %v", err)
+	}
+	e.writeIDATs()
+	e.writeIEND()
+
+	return nil
+}
+
+func main() {
+	width := 100000
+	height := 100000
+	w, err := os.Create("image.png")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(2)
 	}
-	e.writeIDATs()
-	e.writeIEND()
+	err = generatePNG(width, height, w)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(2)
+	}
 }

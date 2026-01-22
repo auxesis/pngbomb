@@ -2,6 +2,18 @@
 
 Go implementation of the [pngbomb](https://github.com/liclac/pngbomb/) technique as implemented by @liclac.
 
+## Using
+
+Generate a malicious PNG by running:
+
+```bash
+pngbomb
+```
+
+This outputs a PNG at `image.png`.
+
+## Developing
+
 ## Setup
 
 Ensure you have git and [mise](https://mise.jdx.dev/) installed, then run:
@@ -41,3 +53,11 @@ mise run build
 ```
 
 This outputs a binary at `./pngbomb`.
+
+## Test
+
+Run the test suite:
+
+```bash
+mise run test
+```

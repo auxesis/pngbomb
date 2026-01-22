@@ -5,6 +5,10 @@ go = "1.25.6"
 description = "Run pngbomb.go"
 run = "go run pngbomb.go"
 
+[tasks."test"]
+description = "Run tests"
+run = "go test -v ./..."
+
 [tasks."build"]
 description = "Build a binary"
 quiet = true
