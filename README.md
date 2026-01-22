@@ -27,23 +27,6 @@ cd pngbomb
 mise install
 ```
 
-### Run
-
-Run `pngbomb.go`:
-
-```bash
-mise run dev
-```
-
-This outputs a 10,000x10,000px 1-bit greyscale PNG at `./image.png`.
-
-Inspect it with `file` and `ls`:
-
-```bash
-file image.png
-ls -lah image.png
-```
-
 ### Build
 
 Build a standalone binary:
@@ -61,3 +44,21 @@ Run the test suite:
 ```bash
 mise run test
 ```
+
+### Run
+
+Run `pngbomb.go`:
+
+```bash
+mise run dev
+```
+
+This outputs a 10,000x10,000px 1-bit greyscale PNG at `./image.png`.
+
+Inspect it with `file` and `ls`:
+
+```bash
+file image.png
+ls -lah image.png
+```
+
