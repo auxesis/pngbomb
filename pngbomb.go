@@ -183,7 +183,9 @@ func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) erro
 		// in larger files (see http://www.libpng.org/pub/png/book/chapter09.html).
 		f := ftNone
 		if cb != 2 {
-			return fmt.Errorf("unexpected cb value: %d", cb)
+			if debug {
+				fmt.Printf("ignoring cb value, but got: %d\n", cb)
+			}
 		}
 
 		// Write the compressed bytes.
@@ -337,6 +339,10 @@ func generatePNG(width int, height int, w io.Writer) error {
 
 	return nil
 }
+
+var (
+	debug = false
+)
 
 func main() {
 	width := 100000
