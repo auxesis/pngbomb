@@ -321,7 +321,7 @@ func writePayload(width int, height int, w io.Writer) (err error) {
 
 func generatePNG(width int, height int, w io.Writer) error {
 	e := &encoder{}
-	pal := color.Palette{}
+	pal := color.Palette{color.Gray{0}}
 	e.m = image.NewPaletted(image.Rectangle{image.Point{0, 0}, image.Point{width, height}}, pal)
 	e.cb = 1
 	e.w = w
