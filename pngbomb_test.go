@@ -42,7 +42,9 @@ func TestGeneratePNGIsValid(t *testing.T) {
 			_, err = tt.file.Seek(0, 0)
 			assert.NoError(err)
 			img, err := png.Decode(tt.file)
-			assert.NoError(err)
+			pos, serr := tt.file.Seek(0, 1)
+			assert.NoError(serr) // handle seek fail
+			assert.NoError(err, "filename: %s\nposition: %d\n", tt.file.Name(), pos)
 			assert.Equal(img.Bounds().Max.X, tt.width)
 			assert.Equal(img.Bounds().Max.Y, tt.height)
 		})
