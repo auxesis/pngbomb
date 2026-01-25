@@ -112,93 +112,6 @@ func (e *encoder) writeIHDR() {
 	e.writeChunk(e.tmp[:13], "IHDR")
 }
 
-func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) error {
-	if e.zw == nil || e.zwLevel != level {
-		zw, err := zlib.NewWriterLevel(w, level)
-		if err != nil {
-			return err
-		}
-		e.zw = zw
-		e.zwLevel = level
-	} else {
-		e.zw.Reset(w)
-	}
-	defer e.zw.Close()
-
-	bitsPerPixel := 2 // may need to be 1?
-
-	// cr[*] and pr are the bytes for the current and previous row.
-	// cr[0] is unfiltered (or equivalently, filtered with the ftNone filter).
-	// cr[ft], for non-zero filter types ft, are buffers for transforming cr[0] under the
-	// other PNG filter types. These buffers are allocated once and re-used for each row.
-	// The +1 is for the per-row filter type, which is at cr[*][0].
-	b := m.Bounds()
-	sz := 1 + (bitsPerPixel*b.Dx()+7)/8
-	for i := range e.cr {
-		if cap(e.cr[i]) < sz {
-			e.cr[i] = make([]uint8, sz)
-		} else {
-			e.cr[i] = e.cr[i][:sz]
-		}
-		e.cr[i][0] = uint8(i)
-	}
-	cr := e.cr
-	if cap(e.pr) < sz {
-		e.pr = make([]uint8, sz)
-	} else {
-		e.pr = e.pr[:sz]
-		clear(e.pr)
-	}
-	pr := e.pr
-
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		// Convert from colors to bytes.
-		i := 1
-		pi := m.(image.PalettedImage)
-
-		var a uint8
-		var c int
-		pixelsPerByte := 8 / bitsPerPixel
-		for x := b.Min.X; x < b.Max.X; x++ {
-			a = a<<uint(bitsPerPixel) | pi.ColorIndexAt(x, y)
-			c++
-			if c == pixelsPerByte {
-				cr[0][i] = a
-				i++
-				a = 0
-				c = 0
-			}
-		}
-		if c != 0 {
-			for c != pixelsPerByte {
-				a = a << uint(bitsPerPixel)
-				c++
-			}
-			cr[0][i] = a
-		}
-
-		// Apply the filter.
-		// Skip filter for NoCompression and paletted images (cbP8) as
-		// "filters are rarely useful on palette images" and will result
-		// in larger files (see http://www.libpng.org/pub/png/book/chapter09.html).
-		f := ftNone
-		if cb != 2 {
-			if debug {
-				fmt.Printf("ignoring cb value, but got: %d\n", cb)
-			}
-		}
-
-		// Write the compressed bytes.
-		if _, err := e.zw.Write(cr[f]); err != nil {
-			return err
-		}
-
-		// The current row for y is the previous row for y+1.
-		pr, cr[0] = cr[0], pr
-	}
-	return nil
-}
-
 // This function is required because we want the zero value of
 // Encoder.CompressionLevel to map to zlib.DefaultCompression.
 func levelToZlib(l png.CompressionLevel) int {
@@ -217,44 +130,6 @@ func levelToZlib(l png.CompressionLevel) int {
 }
 
 func (e *encoder) writeIEND() { e.writeChunk(nil, "IEND") }
-
-// Write the actual image data to one or more IDAT chunks.
-func (e *encoder) writeIDATs() {
-	if e.err != nil {
-		return
-	}
-	if e.bw == nil {
-		e.bw = bufio.NewWriterSize(e, 1<<15)
-	} else {
-		e.bw.Reset(e)
-	}
-	/*
-		fmt.Printf("bw: %+v\n", e.bw)
-		fmt.Printf("m: %+v\n", e.m)
-		fmt.Printf("cb: %+v\n", e.cb)
-		fmt.Printf("enc: %+v\n", e.enc)
-		fmt.Printf("enc.CompressionLevel: %+v\n", e.enc.CompressionLevel)
-	*/
-	e.err = e.writeImage(e.bw, e.m, e.cb, levelToZlib(e.enc.CompressionLevel))
-	if e.err != nil {
-		return
-	}
-	e.err = e.bw.Flush()
-}
-
-// An encoder is an io.Writer that satisfies writes by writing PNG IDAT chunks,
-// including an 8-byte header and 4-byte CRC checksum per Write call. Such calls
-// should be relatively infrequent, since writeIDATs uses a [bufio.Writer].
-//
-// This method should only be called from writeIDATs (via writeImage).
-// No other code should treat an encoder as an io.Writer.
-func (e *encoder) Write(b []byte) (int, error) {
-	e.writeChunk(b, "IDAT")
-	if e.err != nil {
-		return 0, e.err
-	}
-	return len(b), nil
-}
 
 /*
 from image/png/writer_test.go
