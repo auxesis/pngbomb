@@ -150,7 +150,7 @@ func (p *pool) Put(b *png.EncoderBuffer) {
 /*
 Reimplementation of https://github.com/liclac/pngbomb/blob/f0fc2f2a42784557727e44be2f1b86844759a6fa/src/main.rs#L128-L151
 */
-func writePayload(width int, height int, w io.WriteSeeker) (err error) {
+func writePayload(width int, height int, e *encoder) (err error) {
 	// PNG bitmap data is grouped in "scanlines", eg. data for one horizontal line, prefixed with
 	// a 1-byte filter mode flag. We're using no filters (0) and all-black (0) pixels, we just want
 	// to generate a whole pile of deflated zeroes, but without allocating it all upfront.
@@ -188,36 +188,8 @@ func writePayload(width int, height int, w io.WriteSeeker) (err error) {
 		}
 		at += n
 	}
-
-	// write header
-	name := "IDAT"
-	header := make([]byte, 8)
-	n := uint32(b.Len())
-	binary.BigEndian.PutUint32(header[:4], n)
-	header[4] = name[0]
-	header[5] = name[1]
-	header[6] = name[2]
-	header[7] = name[3]
-	crc := crc32.NewIEEE()
-	crc.Write(header[4:8])
-	crc.Write(b.Bytes())
-
-	_, err = w.Write(header[:8])
-	if err != nil {
-		return err
-	}
-
-	// write body
-	_, err = w.Write(b.Bytes())
-	if err != nil {
-		return err
-	}
-
-	// write footer
-	footer := make([]byte, 4)
-	binary.BigEndian.PutUint32(footer[:4], crc.Sum32())
-	_, err = w.Write(footer[:4])
-	return err
+	e.writeChunk(b.Bytes(), "IDAT")
+	return
 }
 
 func generatePNG(width int, height int, w io.WriteSeeker) error {
@@ -230,7 +202,7 @@ func generatePNG(width int, height int, w io.WriteSeeker) error {
 
 	io.WriteString(w, pngHeader)
 	e.writeIHDR()
-	err := writePayload(width, height, w)
+	err := writePayload(width, height, e)
 	if err != nil {
 		return fmt.Errorf("unable to write payload: %v", err)
 	}
