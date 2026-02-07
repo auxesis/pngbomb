@@ -156,8 +156,6 @@ func writePayload(width int, height int, w io.WriteSeeker) (err error) {
 	// to generate a whole pile of deflated zeroes, but without allocating it all upfront.
 	samples := width
 	samplesPerByte := 8 / 1
-	fmt.Printf("samples: %d\n", samples)
-	fmt.Printf("samplesPerByte: %d\n", samplesPerByte)
 	whole := samples / samplesPerByte
 	var fract int
 	if samples%samplesPerByte > 0 {
@@ -165,9 +163,6 @@ func writePayload(width int, height int, w io.WriteSeeker) (err error) {
 	}
 	rawRowLength := 1 + whole + fract
 	ibytes := rawRowLength * height
-	fmt.Printf("rawRowLength: %d\n", rawRowLength)
-	fmt.Printf("height: %d\n", height)
-	fmt.Printf("ibytes: %d\n", ibytes)
 
 	// set up a zlib writer to compress image data
 	var b bytes.Buffer
